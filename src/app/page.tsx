@@ -13,6 +13,9 @@ export default function Home() {
   const [animalType, setAnimalType] = useState<"dog" | "cat" | "all">("all");
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [isFocused, setIsFocused] = useState(false);
+
 
   useEffect(() => {
     async function fetchData() {
@@ -46,6 +49,17 @@ export default function Home() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const allNames = [
+      ...dogData.map((dog) => dog.name),
+      ...catData.map((cat) => cat.name),
+    ];
+    const filteredSuggestions = allNames.filter((name) =>
+      name.toLowerCase().startsWith(searchTerm.toLowerCase())
+    );
+    setSuggestions(filteredSuggestions);
+  }, [searchTerm, dogData, catData]);
+
   if (loading) {
     return <Loader />;
   }
@@ -62,14 +76,29 @@ export default function Home() {
     <>
       <Header />
       <main className="min-h-screen bg-gray-100 p-4">
-        <div className="container mx-auto mb-4">
+        <div className="container mx-auto mb-4 relative">
           <input
             type="text"
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             className="p-2 border rounded mb-4 w-full"
           />
+          {isFocused && searchTerm && suggestions.length > 0 && (
+            <ul className="border rounded bg-white absolute z-10 w-full max-h-40 overflow-y-auto scrollbar-hide">
+              {suggestions.map((suggestion, index) => (
+                <li
+                  key={index}
+                  onMouseDown={() => setSearchTerm(suggestion)}
+                  className="p-2 cursor-pointer hover:bg-gray-200"
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
           <button
             onClick={() => setAnimalType("all")}
             className={`p-2 border rounded mr-2 ${
